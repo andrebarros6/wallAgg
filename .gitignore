@@ -1,0 +1,36 @@
+# Environment
+.env
+venv/
+env/
+*.pyc
+__pycache__/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+data/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Secrets
+*.key
+credentials.json
+secrets.toml
+
+# Test coverage
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+.pytest_cache/
