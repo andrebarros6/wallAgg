@@ -1,28 +1,28 @@
 # Web Framework
-streamlit==1.31.0
+streamlit>=1.31.0
 
 # Data & Visualization
-pandas==2.2.0
-plotly==5.18.0
+pandas>=2.2.0
+plotly>=5.18.0
 
 # Database
-sqlalchemy==2.0.25
+sqlalchemy>=2.0.25
 
 # API Clients
-ccxt==4.2.25
-requests==2.31.0
-python-dotenv==1.0.0
+ccxt>=4.2.25
+requests>=2.31.0
+python-dotenv>=1.0.0
 
 # Security
-cryptography==42.0.0
-pydantic==2.6.0
-pydantic-settings==2.1.0
+cryptography>=42.0.0
+pydantic>=2.10.0
+pydantic-settings>=2.6.0
 
 # Utilities
-tenacity==8.2.3
-cachetools==5.3.2
+tenacity>=8.2.3
+cachetools>=5.3.2
 
 # Testing
-pytest==8.0.0
-pytest-cov==4.1.0
-responses==0.24.1
+pytest>=8.0.0
+pytest-cov>=4.1.0
+responses>=0.24.1
