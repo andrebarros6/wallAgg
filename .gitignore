@@ -34,3 +34,6 @@ htmlcov/
 *.cover
 .hypothesis/
 .pytest_cache/
+
+# Other files
+gitignore

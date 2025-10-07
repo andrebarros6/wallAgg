@@ -65,6 +65,18 @@ class SecureSessionManager:
         st.session_state.accounts = []
 
     @staticmethod
+    def clear_all_credentials():
+        """Clear all credentials from session"""
+        if 'credentials' in st.session_state:
+            # Overwrite memory before deletion
+            for cred_id in st.session_state.credentials:
+                st.session_state.credentials[cred_id] = {
+                    'api_key': '0' * 64,
+                    'api_secret': '0' * 64
+                }
+            st.session_state.credentials = {}
+
+    @staticmethod
     def get_session_info() -> Dict:
         """Get session information for display"""
         if not SecureSessionManager.is_session_valid():

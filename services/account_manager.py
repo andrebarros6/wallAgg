@@ -225,6 +225,18 @@ class AccountManager:
 
         return accounts
 
+    def delete_all_accounts(self):
+        """Delete all accounts from database"""
+        session = get_session()
+        try:
+            # Get all accounts
+            db_accounts = AccountCRUD.get_all_accounts(session)
+            # Delete each one
+            for db_account in db_accounts:
+                AccountCRUD.delete_account(session, db_account.id)
+        finally:
+            session.close()
+
     def _extract_holdings(self, account: Dict) -> List[Dict]:
         """Extract holdings from account data for DB storage"""
         holdings = []

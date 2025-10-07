@@ -124,6 +124,17 @@ if st.sidebar.button("🔄 Refresh All", type="primary"):
                 ErrorHandler.show_error(f"Failed to refresh {account['name']}", str(e))
     st.rerun()
 
+# Clear all button
+if st.sidebar.button("🗑️ Clear All", type="secondary"):
+    if st.session_state.accounts:
+        st.session_state.account_manager.delete_all_accounts()
+        st.session_state.accounts = []
+        SecureSessionManager.clear_all_credentials()
+        ErrorHandler.show_success("All accounts cleared")
+        st.rerun()
+    else:
+        ErrorHandler.show_warning("No accounts to clear")
+
 # Add new account section
 st.sidebar.markdown("---")
 st.sidebar.header("➕ Add New Account")
