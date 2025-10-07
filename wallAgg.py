@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from datetime import datetime
+from tenacity import RetryError
 from services.security.session_manager import SecureSessionManager
 from services.account_manager import AccountManager
 from services.exchanges.supported import SupportedExchanges
@@ -112,6 +113,13 @@ if st.sidebar.button("🔄 Refresh All", type="primary"):
 
                 st.session_state.account_manager.refresh_account_data(account)
                 st.session_state.account_manager.save_account_to_db(account)
+            except RetryError as e:
+                # Unwrap RetryError for better error messages
+                if e.last_attempt and e.last_attempt.exception():
+                    actual_error = str(e.last_attempt.exception())
+                    ErrorHandler.show_error(f"Failed to refresh {account['name']}", actual_error)
+                else:
+                    ErrorHandler.show_error(f"Failed to refresh {account['name']}", "Connection failed after retries")
             except Exception as e:
                 ErrorHandler.show_error(f"Failed to refresh {account['name']}", str(e))
     st.rerun()
@@ -144,8 +152,17 @@ if account_type == "DeFi Wallet":
                         st.session_state.accounts.append(account)
                         ErrorHandler.show_success(f"Added {wallet_name}")
                         st.rerun()
-                except Exception as e:
+                except RetryError as e:
+                    # Unwrap the RetryError to get the actual error
+                    if e.last_attempt and e.last_attempt.exception():
+                        actual_error = str(e.last_attempt.exception())
+                        ErrorHandler.show_error("Failed to add wallet", actual_error)
+                    else:
+                        ErrorHandler.show_error("Failed to add wallet", "Connection failed after multiple retries")
+                except ValueError as e:
                     ErrorHandler.show_error("Failed to add wallet", str(e))
+                except Exception as e:
+                    ErrorHandler.show_error("Failed to add wallet", f"Unexpected error: {str(e)}")
             else:
                 ErrorHandler.show_error("Please fill all required fields")
 
@@ -197,8 +214,10 @@ if st.session_state.accounts:
             try:
                 value = st.session_state.account_manager.calculate_account_value(account, base_currency)
                 total_value += value
-            except:
-                pass
+            except Exception as e:
+                st.error(f"Error calculating value for {account.get('name', 'Unknown')}: {str(e)}")
+                import traceback
+                st.code(traceback.format_exc())
 
     # Portfolio overview
     col1, col2, col3 = st.columns(3)
@@ -318,26 +337,50 @@ if st.session_state.accounts:
         if account['type'] == 'wallet' and account.get('data'):
             if 'native' in account['data'] and account['data']['native']:
                 native = account['data']['native']
+                try:
+                    price = st.session_state.account_manager.price_client.get_price(native['symbol'], base_currency)
+                    value = native['balance'] * price if price else 0
+                except:
+                    price = 0
+                    value = 0
+
                 assets.append({
                     'Symbol': native['symbol'],
                     'Balance': format_balance(native['balance'], native['symbol']),
-                    'Type': 'Native'
+                    'Type': 'Native',
+                    'Value': format_currency(value, base_currency.upper()) if value > 0 else 'N/A'
                 })
 
             if 'tokens' in account['data']:
                 for token in account['data']['tokens']:
+                    try:
+                        price = st.session_state.account_manager.price_client.get_price(token['symbol'], base_currency)
+                        value = token['balance'] * price if price else 0
+                    except:
+                        price = 0
+                        value = 0
+
                     assets.append({
                         'Symbol': token['symbol'],
                         'Balance': format_balance(token['balance'], token['symbol']),
-                        'Type': 'Token'
+                        'Type': 'Token',
+                        'Value': format_currency(value, base_currency.upper()) if value > 0 else 'N/A'
                     })
 
         elif account['type'] == 'exchange' and account.get('data'):
             for asset in account['data']:
+                try:
+                    price = st.session_state.account_manager.price_client.get_price(asset['symbol'], base_currency)
+                    value = asset['balance'] * price if price else 0
+                except:
+                    price = 0
+                    value = 0
+
                 assets.append({
                     'Symbol': asset['symbol'],
                     'Balance': format_balance(asset['balance'], asset['symbol']),
-                    'Type': 'Exchange'
+                    'Type': 'Exchange',
+                    'Value': format_currency(value, base_currency.upper()) if value > 0 else 'N/A'
                 })
 
         if assets:

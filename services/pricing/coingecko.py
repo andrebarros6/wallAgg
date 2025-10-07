@@ -16,17 +16,32 @@ class CoinGeckoClient:
         'ETH': 'ethereum',
         'USDC': 'usd-coin',
         'USDT': 'tether',
-        'BNB': 'binancecoin',
-        'SOL': 'solana',
-        'MATIC': 'matic-network',
-        'ADA': 'cardano',
-        'UNI': 'uniswap',
-        'LINK': 'chainlink',
-        'AVAX': 'avalanche-2',
-        'DOT': 'polkadot',
         'DAI': 'dai',
         'WETH': 'weth',
-        'WBTC': 'wrapped-bitcoin'
+        'WBTC': 'wrapped-bitcoin',
+        'LINK': 'chainlink',
+        'UNI': 'uniswap',
+        'MATIC': 'matic-network',
+        'YFI': 'yearn-finance',
+        'AAVE': 'aave',
+        'APE': 'apecoin',
+        'SHIB': 'shiba-inu',
+        'PEPE': 'pepe',
+        'STETH': 'staked-ether',
+        'BNB': 'binancecoin',
+        'SOL': 'solana',
+        'ADA': 'cardano',
+        'AVAX': 'avalanche-2',
+        'DOT': 'polkadot',
+        'XRP': 'ripple',
+        'DOGE': 'dogecoin',
+        'LTC': 'litecoin',
+        'BCH': 'bitcoin-cash',
+        'TRX': 'tron',
+        'ATOM': 'cosmos',
+        'XLM': 'stellar',
+        'FIL': 'filecoin',
+        'ETC': 'ethereum-classic'
     }
 
     def __init__(self):
@@ -40,7 +55,6 @@ class CoinGeckoClient:
             headers['x-cg-pro-api-key'] = self.api_key
         return headers
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     def get_prices(self, symbols: List[str], vs_currencies: List[str] = ['usd']) -> Dict:
         """Get prices for multiple symbols"""
         cache_key = f"{','.join(sorted(symbols))}:{','.join(sorted(vs_currencies))}"
@@ -57,29 +71,36 @@ class CoinGeckoClient:
         if not coin_ids:
             return {}
 
-        # Make API request
-        params = {
-            'ids': ','.join(coin_ids),
-            'vs_currencies': ','.join(vs_currencies)
-        }
+        # Make API request with error handling
+        try:
+            params = {
+                'ids': ','.join(coin_ids),
+                'vs_currencies': ','.join(vs_currencies)
+            }
 
-        response = requests.get(
-            f"{self.BASE_URL}/simple/price",
-            params=params,
-            headers=self._get_headers()
-        )
-        response.raise_for_status()
-        data = response.json()
+            response = requests.get(
+                f"{self.BASE_URL}/simple/price",
+                params=params,
+                headers=self._get_headers(),
+                timeout=10
+            )
+            response.raise_for_status()
+            data = response.json()
 
-        # Convert back to symbol-based format
-        result = {}
-        for symbol in symbols:
-            coin_id = self.SYMBOL_TO_ID.get(symbol.upper())
-            if coin_id and coin_id in data:
-                result[symbol.upper()] = data[coin_id]
+            # Convert back to symbol-based format
+            result = {}
+            for symbol in symbols:
+                coin_id = self.SYMBOL_TO_ID.get(symbol.upper())
+                if coin_id and coin_id in data:
+                    result[symbol.upper()] = data[coin_id]
 
-        self.cache[cache_key] = result
-        return result
+            self.cache[cache_key] = result
+            return result
+
+        except Exception as e:
+            print(f"Error fetching prices from CoinGecko: {e}")
+            # Return empty dict on error - let caller handle missing prices
+            return {}
 
     def get_price(self, symbol: str, vs_currency: str = 'usd') -> float:
         """Get price for a single symbol"""
